@@ -172,16 +172,16 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
         if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
         UserCredentialModel cred = (UserCredentialModel)input;
-        UserAdapter adapter = getUserAdapter(user);
+        UserAdapter adapter = getUserAdapter(user, realm);
         adapter.setPassword(cred.getValue());
 
         return true;
     }
 
-    public UserAdapter getUserAdapter(UserModel user) {
+    public UserAdapter getUserAdapter(UserModel user, RealmModel realm) {
         UserAdapter adapter = null;
         if (user instanceof CachedUserModel) {
-            adapter = (UserAdapter)((CachedUserModel)user).getDelegateForUpdate();
+            adapter = (UserAdapter)getUserById(user.getId(), realm);
         } else {
             adapter = (UserAdapter)user;
         }
@@ -192,13 +192,13 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
         if (!supportsCredentialType(credentialType)) return;
 
-        getUserAdapter(user).setPassword(null);
+        getUserAdapter(user, realm).setPassword(null);
 
     }
 
     @Override
     public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        if (getUserAdapter(user).getPassword() != null) {
+        if (getUserAdapter(user, realm).getPassword() != null) {
             Set<String> set = new HashSet<>();
             set.add(CredentialModel.PASSWORD);
             return set;
@@ -209,23 +209,23 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        return supportsCredentialType(credentialType) && getPassword(user) != null;
+        return supportsCredentialType(credentialType) && getPassword(user, realm) != null;
     }
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
         UserCredentialModel cred = (UserCredentialModel)input;
-        String password = getPassword(user);
+        String password = getPassword(user, realm);
         return password != null && password.equals(cred.getValue());
     }
 
-    public String getPassword(UserModel user) {
+    public String getPassword(UserModel user, RealmModel realm) {
         String password = null;
-        if (user instanceof CachedUserModel) {
-            password = (String)((CachedUserModel)user).getCachedWith().get(PASSWORD_CACHE_KEY);
-        } else if (user instanceof UserAdapter) {
+        if (user instanceof UserAdapter) {
             password = ((UserAdapter)user).getPassword();
+        } else {
+               password = ((UserAdapter)getUserById(user.getId(), realm)).getPassword();
         }
         return password;
     }
@@ -281,12 +281,12 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
 
     @Override
     public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
-        return Collections.EMPTY_LIST;
+        return getUsers(realm);
     }
 
     @Override
     public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
-        return Collections.EMPTY_LIST;
+        return getUsers(realm, firstResult, maxResults);
     }
 
     @Override
