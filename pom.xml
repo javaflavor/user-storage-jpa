@@ -28,7 +28,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <version.keycloak>3.4.3.Final</version.keycloak>
+        <version.keycloak>7.0.1</version.keycloak>
         <jboss.logging.version>3.3.1.Final</jboss.logging.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
         <hibernate.entitymanager.version>5.1.10.Final</hibernate.entitymanager.version>
